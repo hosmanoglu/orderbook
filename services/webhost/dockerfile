@@ -1,0 +1,24 @@
+
+FROM node:22.11
+
+
+WORKDIR /app
+
+
+COPY ./webhost .
+
+
+RUN npm install
+
+RUN mkdir  ../common
+
+
+COPY ./common /common/
+
+RUN cd ../common && npm install
+
+
+WORKDIR /app
+
+
+CMD ["npm", "start"]

@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  order:
+    build:
+      context: ./services/
+      dockerfile: ./order/Dockerfile
+    environment:
+      RABBITMQ_URL: "amqp://username:password@rabbitmq:5672"
+      ORDER_QUEUE: ORDER_QUEUE
+      ORDER_BOOK_CHANGES_QUEUE: ORDER_BOOK_CHANGES_QUEUE
+      TRANSACTIONS_QUEUE: TRANSACTIONS_QUEUE
+      ORDER_EXECUTED_QUEUE: ORDER_EXECUTED
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  webhost:
+    build:
+      context: ./services/
+      dockerfile: ./webhost/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      RABBITMQ_URL: "amqp://username:password@rabbitmq:5672"
+      ORDER_QUEUE: ORDER_QUEUE
+      ORDER_BOOK_CHANGES_QUEUE: ORDER_BOOK_CHANGES_QUEUE
+      TRANSACTIONS_QUEUE: TRANSACTIONS_QUEUE
+      ORDER_EXECUTED_QUEUE: ORDER_EXECUTED
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      
+
+
+  test_client:
+    build:
+      context: ./test_client
+    environment:
+      WS_URL: "ws://webhost:8080"
+    depends_on:
+      - webhost
+
+
+  redis:
+    image: redis:latest
+    restart: always
+    expose:
+      - 6379
+    command: [ "redis-server", "--appendonly", "yes", "--appendfsync", "everysec" ]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: username
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  node_modules:
+  redis-data:
+
+
