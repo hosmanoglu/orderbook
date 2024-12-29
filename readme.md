@@ -23,10 +23,7 @@ The system is composed of the following components:
 
 4. **Order Book** (Redis)
    - A high-performance database used to store and manage the order book.
-   - Maintains the top 10 buy and sell orders, which are broadcasted periodically.
-
-5. **Transactions**
-   - Tracks executed transactions and order book changes.
+   - Maintains OrderBook which are broadcasted periodically.
    - Sends real-time transaction data to clients.
 
 ### Data Flow
